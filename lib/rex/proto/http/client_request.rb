@@ -24,6 +24,7 @@ class ClientRequest
     'headers'                => nil,
     'raw_headers'            => '',
     'method'                 => 'GET',
+    'partial'                => false,
     'path_info'              => '',
     'port'                   => 80,
     'proto'                  => 'HTTP',
@@ -136,12 +137,16 @@ class ClientRequest
 
       opts['vars_post'].each_pair do |var,val|
         var = var.to_s
-        val = val.to_s
-
-        pstr << '&' if pstr.length > 0
-        pstr << (opts['encode_params'] ? set_encode_uri(var) : var)
-        pstr << '='
-        pstr << (opts['encode_params'] ? set_encode_uri(val) : val)
+        unless val.is_a?(Array)
+          val = [val]
+        end
+        val.each do |v|
+          v = v.to_s
+          pstr << '&' if pstr.length > 0
+          pstr << (opts['encode_params'] ? set_encode_uri(var) : var)
+          pstr << '='
+          pstr << (opts['encode_params'] ? set_encode_uri(v) : v)
+        end
       end
     else
       if opts['encode']
@@ -195,7 +200,7 @@ class ClientRequest
 
     req << set_content_type_header
     req << set_content_len_header(pstr.length)
-    req << set_chunked_header()
+    req << set_chunked_header
     req << opts['raw_headers']
     req << set_body(pstr)
   end
