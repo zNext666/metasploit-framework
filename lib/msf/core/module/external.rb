@@ -1,4 +1,3 @@
-require 'msf/core/modules/external'
 
 module Msf::Module::External
   include Msf::Auxiliary::Report
@@ -19,7 +18,7 @@ module Msf::Module::External
       rescue Interrupt => e
         raise e
       rescue Exception => e
-        elog e.backtrace.join("\n")
+        elog('Unable to execute External Module', error: e)
         fail_with Msf::Module::Failure::Unknown, e.message
       end
     end

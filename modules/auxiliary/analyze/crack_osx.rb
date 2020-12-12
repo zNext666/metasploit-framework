@@ -3,7 +3,6 @@
 # Current source: https://github.com/rapid7/metasploit-framework
 ##
 
-require 'msf/core/auxiliary/password_cracker'
 
 class MetasploitModule < Msf::Auxiliary
   include Msf::Auxiliary::PasswordCracker
@@ -23,8 +22,8 @@ class MetasploitModule < Msf::Auxiliary
       'License'         => MSF_LICENSE,  # JtR itself is GPLv2, but this wrapper is MSF (BSD)
       'Actions'         =>
         [
-          ['john', {'Description' => 'Use John the Ripper'}],
-          ['hashcat', {'Description' => 'Use Hashcat'}],
+          ['john', 'Description' => 'Use John the Ripper'],
+          ['hashcat', 'Description' => 'Use Hashcat'],
         ],
       'DefaultAction' => 'john',
     )

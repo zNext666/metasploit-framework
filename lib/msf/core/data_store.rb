@@ -37,20 +37,29 @@ class DataStore < Hash
     unless opt.nil?
       if opt.validate_on_assignment?
         unless opt.valid?(v, check_empty: false)
-          raise OptionValidateError.new(["Value '#{v}' is not valid for option '#{k}'"])
+          raise Msf::OptionValidateError.new(["Value '#{v}' is not valid for option '#{k}'"])
         end
         v = opt.normalize(v)
       end
     end
 
-    super(k,v)
+    if v.is_a? Hash
+      v.each { |key, value| self[key] = value }
+    else
+      super(k,v)
+    end
   end
 
   #
   # Case-insensitive wrapper around hash lookup
   #
   def [](k)
-    super(find_key_case(k))
+    k = find_key_case(k)
+    if options[k].respond_to? :calculate_value
+      options[k].calculate_value(self)
+    else
+      super(k)
+    end
   end
 
   #

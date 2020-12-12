@@ -12,9 +12,10 @@ require 'monitor'
 
 require 'metasploit/framework/version'
 require 'msf/base/config'
-require 'msf/core'
 require 'msf/util'
-
+require 'msf/events'
+require 'rex/socket/ssl'
+require 'metasploit/framework/thread_factory_provider'
 module Msf
 
 ###
@@ -54,14 +55,8 @@ class Framework
     attr_accessor :framework
   end
 
-  require 'msf/core/thread_manager'
-  require 'msf/core/module_manager'
-  require 'msf/core/session_manager'
-  require 'msf/core/plugin_manager'
   require 'metasploit/framework/data_service/proxy/core'
-  require 'msf/core/event_dispatcher'
   require 'rex/json_hash_file'
-  require 'msf/core/cert_provider'
 
   #
   # Creates an instance of the framework context.
@@ -81,11 +76,13 @@ class Framework
     self.analyze   = Analyze.new(self)
     self.plugins   = PluginManager.new(self)
     self.browser_profiles = Hash.new
+    self.features = FeatureManager.instance
 
     # Configure the thread factory
     Rex::ThreadFactory.provider = Metasploit::Framework::ThreadFactoryProvider.new(framework: self)
 
     # Configure the SSL certificate generator
+    require 'msf/core/cert_provider'
     Rex::Socket::Ssl.cert_provider = Msf::Ssl::CertProvider
 
     subscriber = FrameworkEventSubscriber.new(self)
@@ -195,6 +192,11 @@ class Framework
   # framework objects to offer related objects/actions available.
   #
   attr_reader   :analyze
+  #
+  # The framework instance's feature manager. The feature manager is responsible
+  # for configuring feature flags that can change characteristics of framework.
+  #
+  attr_reader   :features
 
   #
   # The framework instance's dependency
@@ -242,22 +244,9 @@ class Framework
     }
   end
 
-  # TODO: Anything still using this should be ported to use metadata::cache search
-  def search(match, logger: nil)
-    # Do an in-place search
-    matches = []
-    [ self.exploits, self.auxiliary, self.post, self.payloads, self.nops, self.encoders, self.evasion ].each do |mset|
-      mset.each do |m|
-        begin
-          o = mset.create(m[0])
-          if o && !o.search_filter(match)
-            matches << o
-          end
-        rescue
-        end
-      end
-    end
-    matches
+  def search(search_string)
+    search_params = Msf::Modules::Metadata::Search.parse_search_string(search_string)
+    Msf::Modules::Metadata::Cache.instance.find(search_params)
   end
 
 protected
@@ -277,6 +266,7 @@ protected
   attr_writer   :db # :nodoc:
   attr_writer   :browser_profiles # :nodoc:
   attr_writer   :analyze # :nodoc:
+  attr_writer   :features # :nodoc:
 
   private
 
@@ -306,7 +296,7 @@ class FrameworkEventSubscriber
     end
   end
 
-  include GeneralEventSubscriber
+  include Msf::GeneralEventSubscriber
 
   #
   # Generic handler for module events
@@ -375,7 +365,6 @@ class FrameworkEventSubscriber
     report_event(:name => "ui_start", :info => info)
   end
 
-  require 'msf/core/session'
 
   include ::Msf::SessionEvent
 
@@ -386,13 +375,16 @@ class FrameworkEventSubscriber
     address = session.session_host
 
     if not (address and address.length > 0)
-      elog("Session with no session_host/target_host/tunnel_peer")
-      dlog("#{session.inspect}", LEV_3)
+      elog("Session with no session_host/target_host/tunnel_peer. Session Info: #{session.inspect}")
       return
     end
 
     if framework.db.active
       ws = framework.db.find_workspace(session.workspace)
+      opts.each_key do |attr|
+        opts[attr].force_encoding('UTF-8') if opts[attr].is_a?(String)
+      end
+
       event = {
         :workspace => ws,
         :username  => session.username,
@@ -532,7 +524,6 @@ class FrameworkEventSubscriber
   #
   # This is covered by on_module_run and on_session_open, so don't bother
   #
-  #require 'msf/core/exploit'
   #include ExploitEvent
   #def on_exploit_success(exploit, session)
   #end

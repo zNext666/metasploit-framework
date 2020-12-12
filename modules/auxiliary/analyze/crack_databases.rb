@@ -3,15 +3,14 @@
 # Current source: https://github.com/rapid7/metasploit-framework
 ##
 
-require 'msf/core/auxiliary/password_cracker'
 
 class MetasploitModule < Msf::Auxiliary
   include Msf::Auxiliary::PasswordCracker
   include Msf::Exploit::Deprecated
-  moved_from 'auxiliary/analyze/jtr_mssql'
-  moved_from 'auxiliary/analyze/jtr_mysql'
-  moved_from 'auxiliary/analyze/jtr_oracle'
-  moved_from 'auxiliary/analyze/jtr_postgres'
+  moved_from 'auxiliary/analyze/jtr_mssql_fast'
+  moved_from 'auxiliary/analyze/jtr_mysql_fast'
+  moved_from 'auxiliary/analyze/jtr_oracle_fast'
+  moved_from 'auxiliary/analyze/jtr_postgres_fast'
 
   def initialize
     super(
@@ -32,8 +31,8 @@ class MetasploitModule < Msf::Auxiliary
       'License'         => MSF_LICENSE,  # JtR itself is GPLv2, but this wrapper is MSF (BSD)
       'Actions'         =>
         [
-          ['john', {'Description' => 'Use John the Ripper'}],
-          ['hashcat', {'Description' => 'Use Hashcat'}],
+          ['john', 'Description' => 'Use John the Ripper'],
+          ['hashcat', 'Description' => 'Use Hashcat'],
         ],
       'DefaultAction' => 'john',
     )

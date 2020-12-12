@@ -1,5 +1,4 @@
 # -*- coding: binary -*-
-require 'msf/core'
 
 module Msf
 
@@ -28,7 +27,6 @@ module Msf
 #
 ###
 module Handler
-  require 'msf/core/handler/reverse'
 
   ##
   #
@@ -210,7 +208,7 @@ protected
       rescue ::Exception => e
         # We just wanna show and log the error, not trying to swallow it.
         print_error("#{e.class} #{e.message}")
-        elog("#{e.class} #{e.message}\n#{e.backtrace * "\n"}")
+        elog('Could not allocate a new Session.', error: e)
         raise e
       end
 
@@ -300,7 +298,3 @@ protected
 end
 
 end
-
-# The default none handler
-require 'msf/core/handler/none'
-

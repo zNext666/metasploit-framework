@@ -3,16 +3,13 @@
 # Current source: https://github.com/rapid7/metasploit-framework
 ##
 
-require 'msf/core/payload/transport_config'
-require 'msf/core/handler/bind_tcp'
-require 'msf/core/payload/windows/x64/meterpreter_loader'
 require 'msf/base/sessions/meterpreter_x64_win'
 require 'msf/base/sessions/meterpreter_options'
 require 'rex/payloads/meterpreter/config'
 
 module MetasploitModule
 
-  CachedSize = 206403
+  CachedSize = 200262
 
   include Msf::Payload::TransportConfig
   include Msf::Payload::Windows
